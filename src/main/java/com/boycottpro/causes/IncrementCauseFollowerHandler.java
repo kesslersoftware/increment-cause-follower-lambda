@@ -6,6 +6,7 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.boycottpro.models.ResponseMessage;
 import com.boycottpro.utilities.JwtUtility;
+import com.boycottpro.utilities.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -31,35 +32,42 @@ public class IncrementCauseFollowerHandler implements RequestHandler<APIGatewayP
     @Override
     public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent event, Context context) {
         String sub = null;
+        int lineNum = 35;
         try {
             sub = JwtUtility.getSubFromRestEvent(event);
-            if (sub == null) return response(401, Map.of("message", "Unauthorized"));
+            if (sub == null) {
+            Logger.error(38, sub, "user is Unauthorized");
+            return response(401, Map.of("message", "Unauthorized"));
+            }
+            lineNum = 41;
             Map<String, String> pathParams = event.getPathParameters();
             String causeId = (pathParams != null) ? pathParams.get("cause_id") : null;
             String incrementStr = (pathParams != null) ? pathParams.get("increment") : null;
-
             if (causeId == null || causeId.isEmpty()) {
+                Logger.error(47, sub, "cause_id not present");
                 ResponseMessage message = new ResponseMessage(400,
                         "cause_id not present", "Missing cause_id");
                 return response(400,message);
             }
-
             if (incrementStr == null || incrementStr.isEmpty()) {
+                Logger.error(53, sub, "increment not present");
                 ResponseMessage message = new ResponseMessage(400,
                         "increment not present", "Missing increment");
                 return response(400,message);
             }
-
             if (!(incrementStr.equals("true") || incrementStr.equals("false"))) {
+                Logger.error(59, sub, "increment not acceptable value");
                 ResponseMessage message = new ResponseMessage(400,
                         "increment not acceptable value", "Expected true/false");
                 return response(400,message);
             }
+            lineNum = 64;
             boolean increment = Boolean.parseBoolean(incrementStr);
             boolean updated = incrementCauseRecord(causeId, increment);
+            lineNum = 67;
             return response(200,"cause record updated = " + updated);
         } catch (Exception e) {
-            System.out.println(e.getMessage() + " for user " + sub);
+            Logger.error(lineNum, sub, e.getMessage());
             return response(500,Map.of("error", "Unexpected server error: " + e.getMessage()) );
         }
     }
